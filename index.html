@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QR Creator – Generate custom QR codes with logo</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📱</text></svg>" />
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <h1 class="logo">QR Creator</h1>
+      <p class="tagline">Generate custom QR codes with your brand</p>
+
+      <form id="qr-form" class="form">
+        <div class="field">
+          <label for="content">Content <span class="req">*</span></label>
+          <input type="text" id="content" placeholder="https://example.com" value="https://github.com" required />
+        </div>
+
+        <div class="field">
+          <label for="size">QR Code Size</label>
+          <select id="size">
+            <option value="200">200 × 200</option>
+            <option value="300" selected>300 × 300</option>
+            <option value="400">400 × 400</option>
+            <option value="500">500 × 500</option>
+            <option value="600">600 × 600</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="error-level">Error Correction</label>
+          <select id="error-level">
+            <option value="L">Low (L – 7%)</option>
+            <option value="M" selected>Medium (M – 15%)</option>
+            <option value="Q">Quartile (Q – 25%)</option>
+            <option value="H">High (H – 30%)</option>
+          </select>
+        </div>
+
+        <fieldset class="color-fields">
+          <legend>Colors</legend>
+          <div class="field row">
+            <div>
+              <label for="fg-color">Foreground</label>
+              <input type="color" id="fg-color" value="#000000" />
+            </div>
+            <div>
+              <label for="bg-color">Background</label>
+              <input type="color" id="bg-color" value="#ffffff" />
+            </div>
+          </div>
+        </fieldset>
+
+        <div class="field">
+          <label for="logo-upload">Logo (optional)</label>
+          <input type="file" id="logo-upload" accept="image/png,image/jpeg,image/webp,image/svg+xml" />
+          <div id="logo-preview" class="logo-preview hidden">
+            <img id="logo-img" alt="logo preview" />
+            <button type="button" id="remove-logo" class="btn-icon" title="Remove logo">&times;</button>
+          </div>
+        </div>
+
+        <div class="field" id="logo-size-field" style="display:none">
+          <label for="logo-size">Logo size <span id="logo-size-val">25</span>%</label>
+          <input type="range" id="logo-size" min="10" max="40" value="25" />
+        </div>
+
+        <div class="field">
+          <label for="margin">Margin</label>
+          <select id="margin">
+            <option value="0">None</option>
+            <option value="1">1 module</option>
+            <option value="2" selected>2 modules</option>
+            <option value="3">3 modules</option>
+            <option value="4">4 modules</option>
+          </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary" id="generate-btn">Generate QR Code</button>
+      </form>
+    </aside>
+
+    <main class="main">
+      <div class="result">
+        <div class="canvas-wrapper" id="canvas-wrapper">
+          <canvas id="qr-canvas"></canvas>
+          <div class="placeholder" id="placeholder">
+            <span class="placeholder-icon">📱</span>
+            <p>Enter content and generate your QR code</p>
+          </div>
+        </div>
+
+        <div class="actions" id="actions" style="display:none">
+          <button class="btn btn-primary" id="download-png">Download PNG</button>
+          <button class="btn btn-outline" id="download-jpeg">Download JPEG</button>
+          <button class="btn btn-outline" id="download-svg">Download SVG</button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
