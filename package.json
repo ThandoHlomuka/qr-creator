@@ -1,0 +1,16 @@
+{
+  "name": "qr-creator",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Browser-based QR code generator with logo, colors, and dynamic QR support",
+  "scripts": {
+    "dev": "vercel dev",
+    "start": "npx serve ."
+  },
+  "dependencies": {
+    "@vercel/kv": "^2.0.0"
+  },
+  "devDependencies": {
+    "vercel": "^34.0.0"
+  }
+}

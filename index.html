@@ -79,6 +79,33 @@
           </select>
         </div>
 
+        <div class="field">
+          <label for="qr-type">QR Code Type</label>
+          <select id="qr-type">
+            <option value="static">Static QR Code</option>
+            <option value="dynamic">Dynamic QR Code</option>
+          </select>
+        </div>
+
+        <div id="dynamic-fields" class="dynamic-fields" style="display:none">
+          <div class="field">
+            <label for="qr-slug">Custom slug (optional)</label>
+            <input type="text" id="qr-slug" placeholder="auto-generated if empty" />
+          </div>
+          <div class="field">
+            <label for="manage-key">Management key <span class="req">*</span></label>
+            <input type="password" id="manage-key" placeholder="password to manage this QR" required />
+          </div>
+          <p class="hint">Your QR code will point to a URL you can update anytime without reprinting.</p>
+        </div>
+
+        <div class="field checkbox">
+          <label>
+            <input type="checkbox" id="auto-download" checked />
+            Download after generation
+          </label>
+        </div>
+
         <button type="submit" class="btn btn-primary" id="generate-btn">Generate QR Code</button>
       </form>
     </aside>
@@ -97,6 +124,26 @@
           <button class="btn btn-primary" id="download-png">Download PNG</button>
           <button class="btn btn-outline" id="download-jpeg">Download JPEG</button>
           <button class="btn btn-outline" id="download-svg">Download SVG</button>
+        </div>
+
+        <div id="dynamic-manage" class="dynamic-manage" style="display:none">
+          <h2>Your Dynamic QR Codes</h2>
+          <div id="qr-list" class="qr-list"></div>
+          <div id="edit-panel" class="edit-panel" style="display:none">
+            <h3 id="edit-title">Edit QR Code</h3>
+            <div class="field">
+              <label for="edit-destination">New destination URL</label>
+              <input type="url" id="edit-destination" placeholder="https://" />
+            </div>
+            <div class="field">
+              <label for="edit-key-confirm">Enter management key to confirm</label>
+              <input type="password" id="edit-key-confirm" placeholder="management key" />
+            </div>
+            <div class="edit-actions">
+              <button class="btn btn-primary" id="save-edit">Save</button>
+              <button class="btn btn-outline" id="cancel-edit">Cancel</button>
+            </div>
+          </div>
         </div>
       </div>
     </main>
