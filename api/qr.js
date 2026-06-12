@@ -1,6 +1,6 @@
 const { createQr, listQrs } = require('../lib/kv');
 
-const SITE_URL = process.env.SITE_URL || 'http://localhost:3000';
+const SITE_URL = (process.env.SITE_URL || 'https://qr-creator-azure.vercel.app').trim();
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
