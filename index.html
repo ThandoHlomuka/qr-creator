@@ -52,6 +52,42 @@
               <input type="color" id="bg-color" value="#ffffff" />
             </div>
           </div>
+          <div class="field" style="margin-top:0.75rem">
+            <label for="color-theme">Quick Themes</label>
+            <select id="color-theme">
+              <option value="">Custom</option>
+              <option value="000000-ffffff">Classic Black</option>
+              <option value="1a56db-ffffff">Blue</option>
+              <option value="057a55-ffffff">Green</option>
+              <option value="7c3aed-ffffff">Purple</option>
+              <option value="dc2626-ffffff">Red</option>
+              <option value="ea580c-ffffff">Orange</option>
+              <option value="0f172a-f8fafc">Dark Mode</option>
+              <option value="e11d48-fff1f2">Rose</option>
+              <option value="0891b2-ecfeff">Cyan</option>
+            </select>
+          </div>
+          <div class="field checkbox" style="margin-top:0.5rem">
+            <label>
+              <input type="checkbox" id="fg-gradient" />
+              Gradient foreground
+            </label>
+          </div>
+          <div id="gradient-options" class="gradient-options" style="display:none">
+            <div class="field row">
+              <div>
+                <label for="gradient-color">To color</label>
+                <input type="color" id="gradient-color" value="#6366f1" />
+              </div>
+              <div>
+                <label for="gradient-type">Style</label>
+                <select id="gradient-type">
+                  <option value="linear">Linear</option>
+                  <option value="radial">Radial</option>
+                </select>
+              </div>
+            </div>
+          </div>
         </fieldset>
 
         <div class="field">
@@ -66,6 +102,34 @@
         <div class="field" id="logo-size-field" style="display:none">
           <label for="logo-size">Logo size <span id="logo-size-val">25</span>%</label>
           <input type="range" id="logo-size" min="10" max="40" value="25" />
+        </div>
+
+        <div id="logo-style-fields" class="logo-style-fields" style="display:none">
+          <div class="field row">
+            <div>
+              <label for="logo-padding">Padding</label>
+              <select id="logo-padding">
+                <option value="2">Minimal (2px)</option>
+                <option value="6">Small (6px)</option>
+                <option value="10" selected>Medium (10px)</option>
+                <option value="16">Large (16px)</option>
+                <option value="24">Extra (24px)</option>
+              </select>
+            </div>
+            <div>
+              <label for="logo-shape">Shape</label>
+              <select id="logo-shape">
+                <option value="rounded">Rounded Square</option>
+                <option value="circle">Circle</option>
+              </select>
+            </div>
+          </div>
+          <div class="field checkbox">
+            <label>
+              <input type="checkbox" id="logo-border" />
+              White border around logo
+            </label>
+          </div>
         </div>
 
         <div class="field">
