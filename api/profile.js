@@ -1,10 +1,8 @@
-const { createProfile, getProfile, saveQrToProfile, removeQrFromProfile, getProfileQrs, getQrAnalytics } = require('../lib/kv');
-
-const SITE_URL = process.env.SITE_URL || 'http://localhost:3000';
+const { createProfile, getProfile, updateProfile, saveQrToProfile, removeQrFromProfile, deleteQrFromProfile, getProfileQrs, getQrAnalytics, updateQr } = require('../lib/kv');
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') {
@@ -12,10 +10,11 @@ module.exports = async (req, res) => {
     return;
   }
 
-  /* ── POST: create profile or save QR to profile ── */
+  /* ── POST ── */
   if (req.method === 'POST') {
     const { action, id, name, slug, settings } = req.body || {};
 
+    /* Save QR to profile */
     if (action === 'save') {
       if (!id || !slug) {
         res.status(400).json({ error: 'id and slug are required.' });
@@ -32,6 +31,36 @@ module.exports = async (req, res) => {
       return;
     }
 
+    /* Full delete QR from profile and server */
+    if (action === 'deleteQr') {
+      if (!id || !slug) {
+        res.status(400).json({ error: 'id and slug are required.' });
+        return;
+      }
+      try {
+        await deleteQrFromProfile(id, slug);
+        res.json({ success: true });
+      } catch (err) {
+        res.status(err.status || 500).json({ error: err.message });
+      }
+      return;
+    }
+
+    /* Update profile name */
+    if (action === 'updateProfile') {
+      if (!id) {
+        res.status(400).json({ error: 'id is required.' });
+        return;
+      }
+      const profile = await updateProfile(id, { name: name || 'My Profile' });
+      if (!profile) {
+        res.status(404).json({ error: 'Profile not found.' });
+        return;
+      }
+      res.json(profile);
+      return;
+    }
+
     /* Default: create/get profile */
     if (!id) {
       res.status(400).json({ error: 'id is required.' });
@@ -45,7 +74,25 @@ module.exports = async (req, res) => {
     return;
   }
 
-  /* ── GET: profile with saved QRs and aggregate stats ── */
+  /* ── PUT: update destination URL for a saved QR ── */
+  if (req.method === 'PUT') {
+    const { id, slug, destination, key } = req.body || {};
+    if (!id || !slug || !destination || !key) {
+      res.status(400).json({ error: 'id, slug, destination, and key are required.' });
+      return;
+    }
+    try {
+      const entry = await updateQr(slug, destination, key);
+      /* Update saved settings content too */
+      await saveQrToProfile(id, slug, { content: destination });
+      res.json(entry);
+    } catch (err) {
+      res.status(err.status || 500).json({ error: err.message });
+    }
+    return;
+  }
+
+  /* ── GET ── */
   if (req.method === 'GET') {
     const { id, analytics } = req.query;
     if (!id) {
@@ -63,7 +110,6 @@ module.exports = async (req, res) => {
     const totalScans = qrs.reduce((s, q) => s + (q.scans || 0), 0);
     const totalShares = qrs.reduce((s, q) => s + (q.shares || 0), 0);
 
-    /* If ?analytics=slug, get analytics for that slug */
     if (analytics) {
       const data = await getQrAnalytics(analytics);
       if (!data) {
@@ -78,7 +124,7 @@ module.exports = async (req, res) => {
     return;
   }
 
-  /* ── DELETE: remove QR from profile ── */
+  /* ── DELETE ── */
   if (req.method === 'DELETE') {
     const { id, slug } = req.query;
     if (!id || !slug) {

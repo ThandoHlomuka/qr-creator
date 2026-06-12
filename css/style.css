@@ -787,6 +787,77 @@ input[type="range"] {
   gap: 0.3rem;
 }
 
+/* ─── Details & CRUD ─── */
+.details-section {
+  margin-bottom: 1rem;
+}
+.details-section-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  margin-bottom: 0.4rem;
+}
+.details-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid var(--bg);
+  font-size: 0.85rem;
+}
+.details-row .lbl {
+  color: var(--text-secondary);
+}
+.details-row .val {
+  font-weight: 600;
+  color: var(--text);
+  text-align: right;
+  max-width: 60%;
+  word-break: break-all;
+}
+.details-settings-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.3rem 1rem;
+  font-size: 0.82rem;
+}
+.details-settings-grid .item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.2rem 0;
+  border-bottom: 1px solid var(--bg);
+}
+.details-settings-grid .item .l {
+  color: var(--text-secondary);
+}
+.details-settings-grid .item .v {
+  font-weight: 600;
+}
+
+.dash-qr-card .more-actions {
+  display: flex;
+  gap: 0.3rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--bg);
+}
+.dash-qr-card .more-actions .btn-xs {
+  padding: 0.2rem 0.5rem;
+  font-size: 0.68rem;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.dash-qr-card .more-actions .btn-xs:hover {
+  background: var(--bg);
+  color: var(--text);
+}
+
 /* ─── Responsive ─── */
 @media (max-width: 768px) {
   .app {

@@ -668,6 +668,12 @@ function renderDashboardList(qrs) {
         <span class="dash-qr-metric">📅 ${timeAgo(q.createdAt)}</span>
       </div>
       <div class="dash-qr-last">Last scan: ${lastScan}</div>
+      <div class="more-actions">
+        <button class="btn-xs" onclick="editDest('${escapeHtml(q.slug)}')">✏️ Edit URL</button>
+        <button class="btn-xs" onclick="viewDetails('${escapeHtml(q.slug)}')">📋 Details</button>
+        <button class="btn-xs" onclick="regenerateFromDashboard('${escapeHtml(q.slug)}')">🔄 Regenerate</button>
+        <button class="btn-xs" style="color:#ef4444" onclick="deleteFullQr('${escapeHtml(q.slug)}')">🗑️ Delete</button>
+      </div>
     </div>`;
   }).join('');
 }
@@ -750,6 +756,179 @@ window.removeFromProfile = async function(slug) {
     await refreshSavedQrs();
   } catch { showToast('Remove failed.'); }
 };
+
+/* ─── CRUD: Edit Destination ─── */
+window.editDest = function(slug) {
+  document.getElementById('edit-dest-slug').value = '/' + slug;
+  document.getElementById('edit-dest-url').value = '';
+  document.getElementById('edit-dest-key').value = '';
+  document.getElementById('edit-dest-modal').classList.add('open');
+  document.getElementById('edit-dest-modal').dataset.slug = slug;
+};
+
+window.closeEditDest = function() {
+  document.getElementById('edit-dest-modal').classList.remove('open');
+};
+
+document.getElementById('save-edit-dest')?.addEventListener('click', async () => {
+  const slug = document.getElementById('edit-dest-modal').dataset.slug;
+  const destination = document.getElementById('edit-dest-url').value.trim();
+  const key = document.getElementById('edit-dest-key').value.trim();
+  if (!destination || !key) { showToast('Destination and management key are required.'); return; }
+  try {
+    const res = await fetch('/api/profile', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: profileId, slug, destination, key }),
+    });
+    if (!res.ok) { const err = await res.json(); showToast(err.error || 'Update failed.'); return; }
+    showToast('Destination updated!');
+    closeEditDest();
+    refreshSavedQrs();
+  } catch { showToast('Update failed.'); }
+});
+
+/* ─── CRUD: Full Delete ─── */
+window.deleteFullQr = async function(slug) {
+  if (!confirm('Permanently delete /' + slug + '? This removes it from your profile, all scan data, and the server. This cannot be undone.')) return;
+  try {
+    const res = await fetch('/api/profile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'deleteQr', id: profileId, slug }),
+    });
+    if (!res.ok) { showToast('Delete failed.'); return; }
+    showToast('Deleted permanently.');
+    refreshSavedQrs();
+  } catch { showToast('Delete failed.'); }
+};
+
+/* ─── CRUD: View Details ─── */
+window.viewDetails = async function(slug) {
+  const modal = document.getElementById('details-modal');
+  const body = document.getElementById('details-body');
+  modal.classList.add('open');
+  body.innerHTML = '<p style="text-align:center;color:var(--text-secondary)">Loading...</p>';
+  try {
+    const res = await fetch('/api/profile?id=' + profileId + '&analytics=' + slug);
+    if (!res.ok) { body.innerHTML = '<p>Failed to load.</p>'; return; }
+    const data = await res.json();
+    const q = data.qrs?.find(x => x.slug === slug) || data.analytics || {};
+    body.innerHTML = renderDetails(q, data.analytics);
+  } catch { body.innerHTML = '<p>Failed to load details.</p>'; }
+};
+
+window.closeDetails = function() {
+  document.getElementById('details-modal').classList.remove('open');
+};
+
+function renderDetails(q, analytics) {
+  const s = q.settings || {};
+  const qType = s.isDynamic ? '🔗 Dynamic' : '📷 Static';
+  return `
+    <div style="font-size:1.05rem;font-weight:700;margin-bottom:1rem">📋 QR Details: <span style="color:var(--primary)">/${escapeHtml(q.slug)}</span></div>
+    <div class="details-section">
+      <div class="details-section-title">General</div>
+      <div class="details-row"><span class="lbl">Type</span><span class="val">${qType}</span></div>
+      <div class="details-row"><span class="lbl">Destination</span><span class="val">${escapeHtml(q.destination || '')}</span></div>
+      <div class="details-row"><span class="lbl">Created</span><span class="val">${new Date(q.createdAt).toLocaleString()}</span></div>
+      ${q.lastScannedAt ? `<div class="details-row"><span class="lbl">Last Scan</span><span class="val">${new Date(q.lastScannedAt).toLocaleString()}</span></div>` : ''}
+      <div class="details-row"><span class="lbl">Scans</span><span class="val">${q.scans || 0}</span></div>
+      <div class="details-row"><span class="lbl">Shares</span><span class="val">${q.shares || 0}</span></div>
+    </div>
+    ${s.content ? `<div class="details-section">
+      <div class="details-section-title">Saved Settings</div>
+      <div class="details-settings-grid">
+        <div class="item"><span class="l">Size</span><span class="v">${s.size || 300}px</span></div>
+        <div class="item"><span class="l">Error Level</span><span class="v">${s.errorLevel || 'M'}</span></div>
+        <div class="item"><span class="l">Foreground</span><span class="v" style="color:${s.fgColor || '#000'}">${s.fgColor || '#000'}</span></div>
+        <div class="item"><span class="l">Background</span><span class="v" style="color:${s.bgColor || '#fff'}">${s.bgColor || '#fff'}</span></div>
+        <div class="item"><span class="l">Margin</span><span class="v">${s.margin || 2}</span></div>
+        <div class="item"><span class="l">Gradient</span><span class="v">${s.gradient ? 'Yes' : 'No'}</span></div>
+        ${s.hasLogo ? '<div class="item"><span class="l">Logo</span><span class="v">Yes</span></div>' : ''}
+      </div>
+    </div>` : ''}
+    ${analytics ? `<div class="details-section">
+      <div class="details-section-title">Recent Scan Activity</div>
+      <div class="scan-timeline">${(analytics.scansByDay || []).slice(-5).map(d => `
+        <div class="scan-day"><span class="day">${d[0]}</span><div class="bar-wrap"><div class="bar-fill" style="width:${(d[1] / Math.max(...(analytics.scansByDay || []).map(x => x[1]), 1)) * 100}%"></div></div><span class="count">${d[1]}</span></div>
+      `).join('') || '<div style="font-size:0.8rem;color:var(--text-secondary)">No scan data</div>'}</div>
+    </div>` : ''}
+  `;
+}
+
+/* ─── CRUD: Regenerate from Dashboard ─── */
+window.regenerateFromDashboard = async function(slug) {
+  /* Find the QR in savedQrs */
+  const q = savedQrs.find(x => x.slug === slug);
+  if (!q) { showToast('QR not found.'); return; }
+
+  /* Load settings into the creator form */
+  const s = q.settings || {};
+  const dest = q.destination || s.content || '';
+  contentInput.value = dest;
+  if (s.size) sizeSelect.value = s.size;
+  if (s.fgColor) fgColorInput.value = s.fgColor;
+  if (s.bgColor) bgColorInput.value = s.bgColor;
+  if (s.errorLevel) errorLevelSelect.value = s.errorLevel;
+  if (s.margin) marginSelect.value = s.margin;
+  if (s.gradient) {
+    fgGradient.checked = true;
+    gradientOptions.style.display = 'block';
+    if (s.gradientColor) gradientColor.value = s.gradientColor;
+    if (s.gradientType) gradientType.value = s.gradientType;
+  } else {
+    fgGradient.checked = false;
+    gradientOptions.style.display = 'none';
+  }
+  colorTheme.value = '';
+
+  /* If dynamic, load into dynamic mode */
+  if (s.isDynamic) {
+    qrType.value = 'dynamic';
+    dynamicFields.style.display = 'block';
+    manageKey.required = true;
+    qrSlug.value = slug;
+  } else {
+    qrType.value = 'static';
+    dynamicFields.style.display = 'none';
+    manageKey.required = false;
+  }
+
+  /* Go back to creator view */
+  document.getElementById('back-to-creator')?.click();
+
+  showToast('Settings loaded! Regenerate to download.');
+};
+
+/* ─── Profile Edit ─── */
+document.getElementById('profile-bar')?.addEventListener('dblclick', openProfileEdit);
+
+window.openProfileEdit = function() {
+  document.getElementById('profile-edit-name').value = profileName;
+  document.getElementById('profile-edit-id').value = profileId;
+  document.getElementById('profile-edit-modal').classList.add('open');
+};
+
+window.closeProfileEdit = function() {
+  document.getElementById('profile-edit-modal').classList.remove('open');
+};
+
+document.getElementById('save-profile-edit')?.addEventListener('click', async () => {
+  const name = document.getElementById('profile-edit-name').value.trim() || 'My Profile';
+  try {
+    const res = await fetch('/api/profile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'updateProfile', id: profileId, name }),
+    });
+    if (!res.ok) { showToast('Failed to update.'); return; }
+    profileName = name;
+    updateProfileBar({ qrCount: savedQrs.length, totalScans: savedQrs.reduce((s, q) => s + (q.scans || 0), 0) });
+    showToast('Profile updated!');
+    closeProfileEdit();
+  } catch { showToast('Update failed.'); }
+});
 
 function timeAgo(ts) {
   const diff = Date.now() - ts;

@@ -235,12 +235,67 @@
           <div id="dashboard-list" class="dashboard-list"></div>
         </div>
 
+        <!-- Edit Destination Modal -->
+        <div class="modal" id="edit-dest-modal">
+          <div class="modal-backdrop" onclick="closeEditDest()"></div>
+          <div class="modal-content" style="max-width:440px">
+            <button class="modal-close" onclick="closeEditDest()">&times;</button>
+            <h3 id="edit-dest-title" style="font-size:1rem;font-weight:700;margin-bottom:1rem">Edit Destination</h3>
+            <div class="field">
+              <label for="edit-dest-slug">QR Code</label>
+              <input type="text" id="edit-dest-slug" readonly style="background:var(--bg);font-weight:600" />
+            </div>
+            <div class="field">
+              <label for="edit-dest-url">New Destination URL</label>
+              <input type="url" id="edit-dest-url" placeholder="https://" />
+            </div>
+            <div class="field">
+              <label for="edit-dest-key">Management Key</label>
+              <input type="password" id="edit-dest-key" placeholder="enter management key" />
+            </div>
+            <div style="display:flex;gap:0.5rem;margin-top:0.75rem;justify-content:flex-end">
+              <button class="btn btn-outline" onclick="closeEditDest()">Cancel</button>
+              <button class="btn btn-primary" id="save-edit-dest">Save</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- QR Details Modal -->
+        <div class="modal" id="details-modal">
+          <div class="modal-backdrop" onclick="closeDetails()"></div>
+          <div class="modal-content" style="max-width:480px">
+            <button class="modal-close" onclick="closeDetails()">&times;</button>
+            <div id="details-body"></div>
+          </div>
+        </div>
+
         <!-- Analytics Modal -->
         <div class="modal" id="analytics-modal">
           <div class="modal-backdrop" onclick="closeAnalytics()"></div>
           <div class="modal-content" style="max-width:560px">
             <button class="modal-close" onclick="closeAnalytics()">&times;</button>
             <div id="analytics-body"></div>
+          </div>
+        </div>
+
+        <!-- Profile Edit Modal -->
+        <div class="modal" id="profile-edit-modal">
+          <div class="modal-backdrop" onclick="closeProfileEdit()"></div>
+          <div class="modal-content" style="max-width:360px">
+            <button class="modal-close" onclick="closeProfileEdit()">&times;</button>
+            <h3 style="font-size:1rem;font-weight:700;margin-bottom:1rem">Edit Profile</h3>
+            <div class="field">
+              <label for="profile-edit-name">Profile Name</label>
+              <input type="text" id="profile-edit-name" placeholder="My Profile" maxlength="30" />
+            </div>
+            <div class="field">
+              <label for="profile-edit-id">Profile ID</label>
+              <input type="text" id="profile-edit-id" readonly style="background:var(--bg);font-size:0.75rem" />
+            </div>
+            <div style="display:flex;gap:0.5rem;margin-top:0.75rem;justify-content:flex-end">
+              <button class="btn btn-outline" onclick="closeProfileEdit()">Cancel</button>
+              <button class="btn btn-primary" id="save-profile-edit">Save</button>
+            </div>
           </div>
         </div>
       </div>
