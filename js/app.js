@@ -46,6 +46,13 @@ const cancelEdit = document.getElementById('cancel-edit');
 let uploadedLogo = null;
 let editingCode = null;
 
+/* ─── Profile State ─── */
+let profileId = localStorage.getItem('qr_profile_id') || '';
+let profileName = '';
+let savedQrs = [];
+let lastGeneratedContent = '';
+let lastGeneratedSlug = '';
+
 const API_BASE = '/api/qr';
 
 /* ─── Color theme presets ─── */
@@ -183,6 +190,18 @@ form.addEventListener('submit', async (e) => {
 
   generateBtn.disabled = false;
   generateBtn.textContent = 'Generate QR Code';
+
+  lastGeneratedContent = targetContent;
+  if (isDynamic) {
+    const slugUsed = qrSlug.value.trim() || targetContent.split('/').pop();
+    lastGeneratedSlug = slugUsed;
+  } else {
+    lastGeneratedSlug = '';
+  }
+  const saveBtn = document.getElementById('save-profile-btn');
+  if (saveBtn && profileId) {
+    saveBtn.style.display = 'inline-flex';
+  }
 });
 
 function generateSlug() {
@@ -493,8 +512,262 @@ function showToast(msg) {
   toast._hide = setTimeout(() => toast.classList.remove('show'), 3000);
 }
 
+/* ─── Profile System ─── */
+async function initProfile() {
+  if (!profileId) {
+    profileId = Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
+    localStorage.setItem('qr_profile_id', profileId);
+  }
+  try {
+    const res = await fetch('/api/profile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: profileId, name: null }),
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    profileName = data.name || 'My Profile';
+    updateProfileBar(data);
+    const qrRes = await fetch('/api/profile?id=' + profileId);
+    if (qrRes.ok) {
+      const qrData = await qrRes.json();
+      savedQrs = qrData.qrs || [];
+      updateProfileBar(qrData);
+    }
+  } catch { /* silent fail */ }
+}
+
+function updateProfileBar(data) {
+  const avatar = document.getElementById('profile-avatar');
+  const name = document.getElementById('profile-name');
+  const stats = document.getElementById('profile-stats');
+  if (avatar) avatar.textContent = (profileName || 'U')[0].toUpperCase();
+  if (name) name.textContent = profileName;
+  if (stats && data) {
+    const qc = data.qrCount || data.qrs?.length || 0;
+    const sc = data.totalScans || 0;
+    stats.textContent = `${qc} QR${qc !== 1 ? 's' : ''} · ${sc} scan${sc !== 1 ? 's' : ''}`;
+  }
+}
+
+document.getElementById('profile-bar')?.addEventListener('click', openDashboard);
+
+async function refreshSavedQrs() {
+  if (!profileId) return;
+  try {
+    const res = await fetch(`/api/profile?id=${profileId}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    savedQrs = data.qrs || [];
+    updateProfileBar(data);
+    updateDashboardStats(data);
+  } catch { /* silent fail */ }
+}
+
+/* ─── Save to Profile ─── */
+document.getElementById('save-profile-btn')?.addEventListener('click', saveToProfile);
+
+async function saveToProfile() {
+  if (!profileId) return;
+  const slug = lastGeneratedSlug || generateSlug();
+  const settings = {
+    content: lastGeneratedContent,
+    size: sizeSelect.value,
+    fgColor: fgColorInput.value,
+    bgColor: bgColorInput.value,
+    errorLevel: errorLevelSelect.value,
+    margin: marginSelect.value,
+    gradient: fgGradient.checked,
+    gradientColor: gradientColor.value,
+    gradientType: gradientType.value,
+    hasLogo: !!uploadedLogo,
+    isDynamic: qrType.value === 'dynamic',
+  };
+  try {
+    if (!lastGeneratedSlug) {
+      const key = Math.random().toString(36).substring(2, 10);
+      const createRes = await fetch('/api/qr', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug, destination: lastGeneratedContent, key }),
+      });
+      if (!createRes.ok) {
+        const err = await createRes.json();
+        showToast(err.error || 'Could not create tracking entry.');
+        return;
+      }
+      lastGeneratedSlug = slug;
+    }
+    const res = await fetch('/api/profile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'save', id: profileId, slug, settings }),
+    });
+    if (!res.ok) { showToast('Failed to save.'); return; }
+    showToast('Saved to profile!');
+    document.getElementById('save-profile-btn').style.display = 'none';
+    await refreshSavedQrs();
+  } catch (err) { console.error(err); showToast('Save failed.'); }
+}
+
+/* ─── Dashboard ─── */
+async function openDashboard() {
+  await refreshSavedQrs();
+  document.getElementById('canvas-wrapper').style.display = 'none';
+  document.getElementById('actions').style.display = 'none';
+  document.getElementById('dynamic-manage').style.display = 'none';
+  document.getElementById('dashboard-view').style.display = 'block';
+  document.getElementById('qr-form').style.display = 'none';
+  document.getElementById('profile-bar').style.display = 'none';
+  document.querySelector('.sidebar-header .logo').style.display = 'none';
+  document.querySelector('.sidebar-header .tagline').style.display = 'none';
+}
+
+document.getElementById('back-to-creator')?.addEventListener('click', () => {
+  document.getElementById('dashboard-view').style.display = 'none';
+  document.getElementById('canvas-wrapper').style.display = '';
+  document.getElementById('qr-form').style.display = '';
+  document.getElementById('profile-bar').style.display = '';
+  document.querySelector('.sidebar-header .logo').style.display = '';
+  document.querySelector('.sidebar-header .tagline').style.display = '';
+  if (canvas.dataset.lastQr) document.getElementById('actions').style.display = 'flex';
+  if (qrType.value === 'dynamic') document.getElementById('dynamic-manage').style.display = 'block';
+});
+
+function updateDashboardStats(data) {
+  if (!data) return;
+  document.getElementById('dash-qr-count').textContent = data.qrs?.length || 0;
+  document.getElementById('dash-scan-count').textContent = data.totalScans || 0;
+  document.getElementById('dash-share-count').textContent = data.totalShares || 0;
+  renderDashboardList(data.qrs || []);
+}
+
+function renderDashboardList(qrs) {
+  const list = document.getElementById('dashboard-list');
+  if (!qrs.length) {
+    list.innerHTML = '<div class="dashboard-empty"><div class="icon">📱</div><p>No QR codes saved yet — generate one and click "Save to Profile"!</p></div>';
+    return;
+  }
+  list.innerHTML = qrs.map(q => {
+    const dest = q.settings?.content || q.destination || '';
+    const lastScan = q.lastScannedAt ? timeAgo(q.lastScannedAt) : 'never';
+    const qrTypeLabel = q.settings?.isDynamic ? '🔗 Dynamic' : '📷 Static';
+    return `<div class="dash-qr-card">
+      <div class="dash-qr-top">
+        <span class="dash-qr-slug">${qrTypeLabel} /${escapeHtml(q.slug)}</span>
+        <div class="dash-qr-actions">
+          <button class="btn btn-outline btn-sm" onclick="shareQr('${escapeHtml(q.slug)}')">📤 Share</button>
+          <button class="btn btn-outline btn-sm" onclick="showAnalytics('${escapeHtml(q.slug)}')">📊 Stats</button>
+          <button class="btn btn-outline btn-sm" style="color:#ef4444;border-color:#fecaca" onclick="removeFromProfile('${escapeHtml(q.slug)}')">Remove</button>
+        </div>
+      </div>
+      <div class="dash-qr-dest" title="${escapeHtml(dest)}">${escapeHtml(dest)}</div>
+      <div class="dash-qr-metrics">
+        <span class="dash-qr-metric">👁 <span class="num">${q.scans || 0}</span> scans</span>
+        <span class="dash-qr-metric">📤 <span class="num">${q.shares || 0}</span> shares</span>
+        <span class="dash-qr-metric">📅 ${timeAgo(q.createdAt)}</span>
+      </div>
+      <div class="dash-qr-last">Last scan: ${lastScan}</div>
+    </div>`;
+  }).join('');
+}
+
+/* ─── Share QR ─── */
+window.shareQr = async function(slug) {
+  const shareUrl = window.location.origin + '/api/qr/' + slug;
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: 'QR Code', url: shareUrl });
+      await fetch('/api/qr/' + slug, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'share' }),
+      });
+      showToast('Shared!');
+      refreshSavedQrs();
+    } catch { /* user cancelled */ }
+  } else {
+    try { await navigator.clipboard.writeText(shareUrl); } catch {}
+    await fetch('/api/qr/' + slug, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'share' }),
+    });
+    showToast('Link copied & share recorded!');
+    refreshSavedQrs();
+  }
+};
+
+/* ─── Analytics ─── */
+window.showAnalytics = async function(slug) {
+  const modal = document.getElementById('analytics-modal');
+  const body = document.getElementById('analytics-body');
+  body.innerHTML = '<p style="text-align:center;color:var(--text-secondary)">Loading analytics...</p>';
+  modal.classList.add('open');
+  try {
+    const res = await fetch('/api/qr/' + slug + '?analytics=1');
+    if (!res.ok) { body.innerHTML = '<p>Analytics not available.</p>'; return; }
+    const data = await res.json();
+    body.innerHTML = renderAnalytics(data);
+  } catch { body.innerHTML = '<p>Failed to load analytics.</p>'; }
+};
+
+window.closeAnalytics = function() {
+  document.getElementById('analytics-modal').classList.remove('open');
+};
+
+function renderAnalytics(data) {
+  const days = data.scansByDay || [];
+  const maxDay = Math.max(...days.map(d => d[1]), 1);
+  const devices = data.scansByDevice || {};
+  return `
+    <div class="analytics-title">📊 Analytics for <span style="color:var(--primary)">/${escapeHtml(data.slug)}</span></div>
+    <div class="analytics-grid">
+      <div class="analytics-stat"><div class="v">${data.scans}</div><div class="l">Total Scans</div></div>
+      <div class="analytics-stat"><div class="v">${data.shares}</div><div class="l">Shares</div></div>
+      <div class="analytics-stat"><div class="v">${data.lastScannedAt ? timeAgo(data.lastScannedAt) : 'N/A'}</div><div class="l">Last Scan</div></div>
+    </div>
+    <div class="analytics-section-title">Scan Activity</div>
+    <div class="scan-timeline">${days.length ? days.slice(-7).map(d => `
+      <div class="scan-day"><span class="day">${d[0]}</span><div class="bar-wrap"><div class="bar-fill" style="width:${(d[1] / maxDay) * 100}%"></div></div><span class="count">${d[1]}</span></div>
+    `).join('') : '<div style="font-size:0.8rem;color:var(--text-secondary)">No scan data yet</div>'}</div>
+    <div class="analytics-section-title">Device Breakdown</div>
+    <div class="device-breakdown">
+      <span>💻 Desktop: <strong>${devices.desktop || 0}</strong></span>
+      <span>📱 Mobile: <strong>${devices.mobile || 0}</strong></span>
+      <span>📟 Tablet: <strong>${devices.tablet || 0}</strong></span>
+    </div>
+  `;
+}
+
+/* ─── Remove from Profile ─── */
+window.removeFromProfile = async function(slug) {
+  if (!confirm('Remove /' + slug + ' from your profile?')) return;
+  try {
+    const res = await fetch('/api/profile?id=' + profileId + '&slug=' + slug, { method: 'DELETE' });
+    if (!res.ok) { showToast('Failed to remove.'); return; }
+    showToast('Removed from profile.');
+    await refreshSavedQrs();
+  } catch { showToast('Remove failed.'); }
+};
+
+function timeAgo(ts) {
+  const diff = Date.now() - ts;
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return mins + 'm ago';
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return hrs + 'h ago';
+  const days = Math.floor(hrs / 24);
+  if (days < 30) return days + 'd ago';
+  return new Date(ts).toLocaleDateString();
+}
+
 function escapeHtml(str) {
   const div = document.createElement('div');
   div.textContent = str;
   return div.innerHTML;
 }
+
+/* ─── Boot ─── */
+initProfile();

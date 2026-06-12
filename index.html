@@ -10,8 +10,19 @@
 <body>
   <div class="app">
     <aside class="sidebar">
-      <h1 class="logo">QR Creator</h1>
-      <p class="tagline">Generate custom QR codes with your brand</p>
+      <div class="sidebar-header">
+        <h1 class="logo">QR Creator</h1>
+        <p class="tagline">Generate custom QR codes with your brand</p>
+        <div class="profile-bar" id="profile-bar">
+          <div class="profile-avatar" id="profile-avatar">U</div>
+          <div class="profile-info">
+            <div class="profile-name" id="profile-name">My Profile</div>
+            <div class="profile-stats" id="profile-stats">0 QRs · 0 scans</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-footer">Developed by Thando Hlomuka</div>
 
       <form id="qr-form" class="form" novalidate>
         <div class="field">
@@ -188,6 +199,7 @@
           <button class="btn btn-primary" id="download-png">Download PNG</button>
           <button class="btn btn-outline" id="download-jpeg">Download JPEG</button>
           <button class="btn btn-outline" id="download-svg">Download SVG</button>
+          <button class="btn btn-outline" id="save-profile-btn" style="display:none;border-color:var(--primary);color:var(--primary)">💾 Save to Profile</button>
         </div>
 
         <div id="dynamic-manage" class="dynamic-manage" style="display:none">
@@ -207,6 +219,28 @@
               <button class="btn btn-primary" id="save-edit">Save</button>
               <button class="btn btn-outline" id="cancel-edit">Cancel</button>
             </div>
+          </div>
+        </div>
+
+        <div id="dashboard-view" class="dashboard-view" style="display:none">
+          <div class="dashboard-header">
+            <h2>My Dashboard</h2>
+            <button class="btn btn-outline btn-sm" id="back-to-creator">← Back to Creator</button>
+          </div>
+          <div class="dashboard-stats" id="dashboard-stats">
+            <div class="dash-stat"><div class="dash-stat-val" id="dash-qr-count">0</div><div class="dash-stat-lbl">QR Codes</div></div>
+            <div class="dash-stat"><div class="dash-stat-val" id="dash-scan-count">0</div><div class="dash-stat-lbl">Total Scans</div></div>
+            <div class="dash-stat"><div class="dash-stat-val" id="dash-share-count">0</div><div class="dash-stat-lbl">Shares</div></div>
+          </div>
+          <div id="dashboard-list" class="dashboard-list"></div>
+        </div>
+
+        <!-- Analytics Modal -->
+        <div class="modal" id="analytics-modal">
+          <div class="modal-backdrop" onclick="closeAnalytics()"></div>
+          <div class="modal-content" style="max-width:560px">
+            <button class="modal-close" onclick="closeAnalytics()">&times;</button>
+            <div id="analytics-body"></div>
           </div>
         </div>
       </div>
